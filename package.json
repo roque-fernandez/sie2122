@@ -1,0 +1,41 @@
+{
+  "name": "sie2122",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "start": "node index.js",
+    "test": "npm run test-public-expenditure-stats && npm run test-public-debt-stats && npm run test-smi-stats"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roque-fernandez/sie2122.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/roque-fernandez/sie2122/issues"
+  },
+  "homepage": "https://github.com/roque-fernandez/sie2122#readme",
+  "dependencies": {
+    "body-parser": "^1.19.2",
+    "bootstrap": "^5.1.3",
+    "cool-ascii-faces": "^1.3.4",
+    "express": "^4.17.3",
+    "nedb": "^1.8.0",
+    "sveltestrap": "^5.9.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.0.0",
+    "rollup": "~2.66",
+    "rollup-plugin-css-only": "^3.1.0",
+    "rollup-plugin-livereload": "^2.0.0",
+    "rollup-plugin-svelte": "^7.0.0",
+    "rollup-plugin-terser": "^7.0.0",
+    "svelte": "^3.47.0",
+    "svelte-spa-router": "^3.1.0"
+  }
+}

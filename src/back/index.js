@@ -6,7 +6,7 @@
             id: 1,
             producto: "Pan de trigo",
             cantidad: 3,
-            fecha: "03/05/2022",
+            fecha: "2022-03-04",
             comprador: "José Fernández",
             entregado: true   
         },
@@ -14,7 +14,7 @@
             id: 2,
             producto: "Pan de espelta",
             cantidad: 20,
-            fecha: "04/05/2022",
+            fecha: "2022-13-05",
             comprador: "María López",
             entregado: false   
         }

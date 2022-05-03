@@ -5,7 +5,6 @@
 </script>
 
 <main>
-	<h1>Lista de pedidos</h1>
 	
 	
 	<TablaPedidos />

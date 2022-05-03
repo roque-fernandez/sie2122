@@ -97,6 +97,31 @@
 
 </script>
 
+<style>
+    /*table {
+       width: 100%;
+       border: 1px solid #000;
+    }*/
+    thead{
+        background-color: #9381ff;
+    }
+    tbody{
+        background-color: #f8f7ff;
+    }
+    th, td {
+       width: 15%;
+       text-align: center;
+       vertical-align: center;
+       border: 1px solid #000;
+       border-spacing: 0;
+    }
+
+    h1{
+        text-align: center;
+        padding-bottom: 2em;
+    }
+</style>
+
 <main>
     <h1>Editar pedido {params.id}</h1>
 
@@ -123,7 +148,10 @@
 				    <th>Producto</th>
 				    <th>Cantidad</th>
 				    <th>Fecha</th>
+                    <th>Comprador</th>
                     <th>Entregado</th>
+                    <th></th>
+
                 </tr>
             </thead>
             <tbody>
@@ -133,7 +161,7 @@
                     <td><input type="number" bind:value="{updatedCantidad}"></td>
                     <td><input bind:value="{updatedFecha}"></td>
                     <td><input bind:value="{updatedComprador}"></td>
-                    <td><input bind:value="{updatedEntregado}"></td>
+                    <td><input type=checkbox checked={updatedEntregado}></td>
 
                     <td><Button outline color="primary" on:click="{editData}">
                         Editar

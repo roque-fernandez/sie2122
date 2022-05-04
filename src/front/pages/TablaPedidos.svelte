@@ -30,7 +30,7 @@
 
     async function getData(){
         console.log("Fetching stats....");
-        const res = await fetch("/api/v1/pedidos?limit="+limit);
+        const res = await fetch("/api/v1/pedidos?limit="+limit+"&offset="+offset);
         if(res.ok){
             data = await res.json();
 			total = data.length;

@@ -1,7 +1,9 @@
 
+module.exports.register = (app,db) => {
+
     const BASE_API_URL = "/api/v1/pedidos";
 
-    var data = [
+    var initialData = [
         {
             id: 1,
             producto: "Pan de trigo",
@@ -21,154 +23,93 @@
         
     ];
 
-module.exports.register = (app,db) => {
+    var data = initialData;
 
     //LOAD INITIAL DATA
 
-    app.get(BASE_API_URL + "/loadInitialData", (req, res) => {
+    app.get(BASE_API_URL + "/loadInitialData", (req,res) => {
 
-        db.find({}, function (err, filteredList) {
-            if (err) {
-                res.sendStatus(500, "ERROR EN CLIENTE");
-                return;
-            }
-            if (filteredList == 0) {
-                for (var i = 0; i < data.length; i++) {
-                    db.insert(data[i]);
-                }
-                res.sendStatus(200, "OK.");
-                return;
-            }else{
-            res.sendStatus(200, "Ya inicializados")
-        }
-        });
-    })
-
-    //GET GENERAL
-    
-    app.get(BASE_API_URL, (req, res) => {
-
-        var year = req.query.year;
-        var from = req.query.from;
-        var to = req.query.to;
-
-        //Comprobamos query
-
-        for (var i = 0; i < Object.keys(req.query).length; i++) {
-            var element = Object.keys(req.query)[i];
-            if (element != "year" && element != "from" && element != "to" && element != "limit" && element != "offset") {
-                res.sendStatus(400, "BAD REQUEST");
-                return;
-            }
-        }
-
-        db.find({}, function (err, filteredList) {
-            if (err) {
-                res.sendStatus(500, "ERROR EN CLIENTE");
-                return;
-            }
-
-
-            // Resultado sin ID
-            if (req.query.limit != undefined || req.query.offset != undefined) {
-                filteredList = pagingMaker(req, filteredList);
-            }
-            filteredList.forEach((element) => {
-                delete element._id;
+        //inicializamos el vector
+        if(data.length === 0){
+            initialData.forEach((a)=>{
+                data.push(a);
             });
+        }
+        res.send(JSON.stringify(data,null,2));
+        
+    
+    });
 
-            //Comprobamos fields
-            if(req.query.fields!=null){
-                //Comprobamos si los campos son correctos
-                var listaFields = req.query.fields.split(",");
-                for(var i = 0; i<listaFields.length;i++){
-                    var element = listaFields[i];
-                    if(element != "id" && element != "producto" && element != "cantidad"  && element != "fecha" && element!="comprador" && element!="entregado"){
-                        res.sendStatus(400, "BAD REQUEST");
-                        return;
-                    }
-                }
-                //Escogemos los campos correspondientes
-                filteredList = checkFields(req,filteredList);
-            }
-            res.send(JSON.stringify(filteredList, null, 2));
-        })
-    })
+    
 
     //GET DE UN RECURSO CONCRETO
     
-    app.get(BASE_API_URL + "/:id", (req, res) => {
+    app.get(BASE_API_URL+"/:id",(req,res)=>{
+        filteredData = data.filter((d)=>{
+            return (d.id == req.params.id);
+        })
+        if(filteredData.length === 0){
+            res.sendStatus(404,"NOT FOUND");
+        }else{
+            //se devuelve un unico objeto
+            res.send(JSON.stringify(filteredData[0], null, 2));
+        }
+    });
 
-        var id = req.params.id
+    //GET GENERAL
+    
+    app.get(BASE_API_URL, (req,res) => {
+        //hay busqueda
+        if(Object.keys(req.query).length > 0){
+            console.log("Query:",req.query);
+            selectedData = filterQuery(req,data);
 
-        db.find({}, function (err, filteredList) {
-            if (err) {
-                res.sendStatus(500, "ERROR EN CLIENTE");
-                return;
+            if(req.query.limit != undefined || req.query.offset != undefined){
+                selectedData = pagingMaker(req,selectedData);
             }
-            filteredList = filteredList.filter((reg) => {
-                return (reg.id == id);
-            });
-            if (filteredList == 0) {
-                res.sendStatus(404, "NOT FOUND");
-                return;
-            }
+        }
+        //no hay busqueda
+        else{
+            selectedData = data;
+        }
 
-            //RESULTADO
-
-            //Paginación
-            if (req.query.limit != undefined || req.query.offset != undefined) {
-                filteredList = pagingMaker(req, filteredList);
-                res.send(JSON.stringify(filteredList, null, 2));
-            }
-            filteredList.forEach((element) => {
-                delete element._id;
-            });
-            //Comprobamos fields
-            if(req.query.fields!=null){
-                //Comprobamos si los campos son correctos
-                var listaFields = req.query.fields.split(",");
-                for(var i = 0; i<listaFields.length;i++){
-                    var element = listaFields[i];
-                    if(element != "id" && element != "producto" && element != "cantidad"  && element != "fecha" && element!="comprador" && element!="entregado"){
-                        res.sendStatus(400, "BAD REQUEST");
-                        return;
-                    }
-                }
-                //Escogemos los campos correspondientes
-                filteredList = checkFields(req,filteredList);
-            }
-            res.send(JSON.stringify(filteredList[0], null, 2));
-        });
-    })
+        if(selectedData.includes("ERROR")) {
+            res.sendStatus(400,"BAD REQUEST"); 
+        } else if(selectedData.length === 0) {
+            res.sendStatus(404,"NOT FOUND");
+        }else{
+            res.send(JSON.stringify(selectedData, null, 2));
+        } 
+    });
 
     //POST CORRECTO
     
-    app.post(BASE_API_URL, (req, res) => {
-
-        if (checkBody(req)) {
-            res.sendStatus(400, "BAD REQUEST");
-        } else {
-            db.find({}, function (err, filteredList) {
-
-                if (err) {
-                    res.sendStatus(500, "ERROR EN CLIENTE");
-                    return;
-                }
-
-                filteredList = filteredList.filter((reg) => {
-                    return (req.body.id == reg.id)
-                })
-
-                if (filteredList.length != 0) {
-                    res.sendStatus(409, "CONFLICT");
-                } else {
-                    db.insert(req.body);
-                    res.sendStatus(201, "CREATED");
-                }
+    app.post(BASE_API_URL, (req,res) => {
+        //comprobamos que los parametros existan
+        if( 
+            checkBody(req)
+        ){ 
+            res.sendStatus(400,"BAD REQUEST");  
+        }else{
+            filteredData = data.filter((d)=>{
+                return (
+                    d.id == req.body.id && 
+                    d.producto == req.body.producto &&
+                    d.cantidad == req.body.cantidad &&
+                    d.fecha == req.body.fecha &&
+                    d.entregado == req.body.entregado &&
+                    d.comprador == req.body.comprador
+                    );
             })
+    
+            if(filteredData.length === 0){
+                data.push(req.body);
+                res.sendStatus(201,"CREATED");
+            }else{
+                res.sendStatus(409,"CONFLICT");
+            }
         }
-    })
+    });
 
     //POST NO PERMITIDO
 
@@ -178,47 +119,37 @@ module.exports.register = (app,db) => {
 
     //PUT CORRECTO
 
-    app.put(BASE_API_URL + "/:id", (req, res) => {
+    app.put(BASE_API_URL +"/:id", (req,res) => {
 
-        //comprobamos body
-
-        if (checkBody(req)) {
-            res.sendStatus(400, "BAD REQUEST");
-            return;
-        }
-        var idR = req.params.id;
-
-        db.find({}, function (err, filteredList) {
-            if (err) {
-                res.sendStatus(500, "ERROR EN CLIENTE");
-                return;
+        //comprobamos que los parametros del req existan
+        if(
+            checkBody(req)
+        ){ 
+            res.sendStatus(400,"BAD REQUEST");  
+        }else{
+            existsStat = data.filter((d)=>{
+                return (
+                    d.id == req.params.id 
+                    
+                    );
+            })
+    
+            var indice = data.indexOf(existsStat[0]);
+    
+            if(existsStat.length === 0){
+                res.sendStatus(404,"NOT FOUND");
             }
+            else{
+                data[indice].producto = req.body.producto;
+                data[indice].cantidad = req.body.cantidad;
+                data[indice].fecha = req.body.fecha;
+                data[indice].entregado = req.body.entregado;
+                data[indice].comprador = req.body.comprador;
 
-            //comprobamos que el elemento exista
-            filteredList = filteredList.filter((reg) => {
-                return (reg.id == idR);
-            });
-            if (filteredList == 0) {
-                res.sendStatus(404, "NOT FOUND");
-                return;
-            }
-
-            //comprobamos que los campos coincidan
-            if (idR != req.body.id) {
-                res.sendStatus(400, "BAD REQUEST");
-                return;
-            }
-
-            //actualizamos valor
-            db.update({$and:[{id: String(idR)}]}, {$set: req.body}, {},function(err) {
-                if (err) {
-                    res.sendStatus(500, "ERROR EN CLIENTE");
-                }else{
-                    res.sendStatus(200,"UPDATED");
-                }
-            });
-        })
-    })
+                res.sendStatus(200,"OK");
+            } 
+        }   
+    });
 
     //PUT NO PERMITIDO
 
@@ -228,44 +159,23 @@ module.exports.register = (app,db) => {
 
     //DELETE GENERAL
 
-    app.delete(BASE_API_URL,(req, res)=>{
-        db.remove({}, { multi: true }, (err, numRemoved)=>{
-            if (err){
-                res.sendStatus(500,"ERROR EN CLIENTE");
-                return;
-            }
-            res.sendStatus(200,"DELETED");
-            return;
-        });
-    })
+    app.delete(BASE_API_URL,(req,res)=>{
+        data = []
+        res.sendStatus(200,"OK");
+    
+    });
 
     //DELETE DE UN RECURSO CONCRETO
     
-    app.delete(BASE_API_URL+"/:id",(req, res)=>{
-        var idR = req.params.id;
+    app.delete(BASE_API_URL + "/:id",(req,res)=>{
+        data = data.filter((d)=>{
+            return (d.id != req.params.id);
+        })
+        res.sendStatus(200,"OK");
+    
+    });
 
-        db.find({id: parseInt(idR)}, {}, (err, filteredList)=>{
-            if (err){
-                res.sendStatus(500,"ERROR EN CLIENTE");
-                return;
-            }
-            if(filteredList==0){
-                res.sendStatus(404,"NOT FOUND");
-                return;
-            }
-            db.remove({id: parseInt(idR)}, {}, (err)=>{
-                if (err){
-                    res.sendStatus(500,"ERROR EN CLIENTE");
-                    return;
-                }
-            
-                res.sendStatus(200,"DELETED");
-                return;
-                
-            });
-        });
-
-    })
+    
 
     //FUNCION DE PAGINACION
 
@@ -305,85 +215,45 @@ module.exports.register = (app,db) => {
         )
     }
 
-    //FUNCION PARA COMPROBAR LOS CAMPOS DEL OBJETO
+    //FUNCION DE FILTRADO
+    function filterQuery(req,data){
+        filteredStats = data.filter((d)=>{
+            
+            var flag = true;
 
-    function checkFields(req, lista){
-        var fields = req.query.fields;
-        var hasId = false;
-        var hasProducto = false;
-        var hasCantidad = false;
-        var hasFecha = false;
-        var hasComprador = false;
-        var hasEntregado = false;
-
-        fields = fields.split(",");
-
-        for(var i = 0; i<fields.length;i++){
-            var element = fields[i];
-            if(element=='id'){
-                hasId=true;
+            if(req.query.id != undefined) {
+                if(d.id != req.query.id)  {
+                    flag = false;
+                }
             }
-            if(element=='producto'){
-                hasProducto=true;
+            if(req.query.producto != undefined) {
+                if(d.producto != req.query.producto)  {
+                    flag = false;
+                }
             }
-            if(element=='cantidad'){
-                hasCantidad=true;
+            if(req.query.fecha != undefined) {
+                if(d.fecha != req.query.fecha)  {
+                    flag = false;
+                }
             }
-            if(element=='fecha'){
-                hasFecha=true;
+            if(req.query.cantidad != undefined) {
+                if(d.cantidad != req.query.pe_to_gdp)  {
+                    flag = false;
+                }
             }
-            if(element=='comprador'){
-                hasComprador=true;
+            if(req.query.comprador != undefined) {
+                if(d.comprador != req.query.comprador)  {
+                    flag = false;
+                }
             }
-            if(element=='entregado'){
-                hasEntregado=true;
+            if(req.query.entregado != undefined) {
+                if(d.entregado != req.query.entregado)  {
+                    flag = false;
+                }
             }
-        }
-
-        //id
-        if(!hasId){
-            lista.forEach((element)=>{
-                delete element.id;
-            })
-        }
-
-        //producto
-        if(!hasProducto){
-            lista.forEach((element)=>{
-                delete element.producto;
-            })
-        }
-
-        //cantidad
-        if(!hasCantidad){
-            lista.forEach((element)=>{
-                delete element.cantidad;
-            })
-        }
-
-        //fecha
-        if(!hasFecha){
-            lista.forEach((element)=>{
-                delete element.fecha;
-            })
-        }
-
-        //comprador
-        if(!hasComprador){
-            lista.forEach((element)=>{
-                delete element.comprador;
-            })
-        }
-
-        //entregado
-        if(!hasEntregado){
-            lista.forEach((element)=>{
-                delete element.entregado;
-            })
-        }
-
-        return lista;
-
+            return flag  
+        });
+        return filteredStats;
     }
 
     

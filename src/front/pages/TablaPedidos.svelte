@@ -267,9 +267,6 @@ h1{
 						</tr>
 					{/each}
 					<tr>
-						<td><Button outline color="success" on:click={loadData}>
-							Cargar datos
-						</Button></td>
 						<td><Button outline color="danger" on:click={deleteData}>
 							Borrar todo
 						</Button></td>
